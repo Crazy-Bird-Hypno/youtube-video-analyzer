@@ -1,62 +1,79 @@
-import { GoogleGenAI, Type } from "@google/genai";
-import { Analysis } from "../types";
+import React, { useState } from 'react';
+import YouTubeIcon from './icons/YouTubeIcon';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+interface UrlInputFormProps {
+  onSubmit: (url: string) => void;
+  isLoading: boolean;
+}
 
-/**
- * Analyzes a video transcript using the Gemini API.
- * @param transcript The transcript of the video.
- * @returns A promise that resolves to an Analysis object.
- */
-export const analyzeVideoTranscript = async (transcript: string): Promise<Analysis> => {
-  // FIX: Use systemInstruction to separate the prompt from the data, which is a better practice.
-  const systemInstruction = `Analyze the video transcript provided. Provide a concise and engaging title for the video, a comprehensive summary of its content, and list the most important key takeaways as an array of strings. The output must be in JSON format matching the provided schema.`;
+const UrlInputForm: React.FC<UrlInputFormProps> = ({ onSubmit, isLoading }) => {
+  const [url, setUrl] = useState('');
 
-  const responseSchema = {
-    type: Type.OBJECT,
-    properties: {
-      title: {
-        type: Type.STRING,
-        description: "A concise and engaging title for the video."
-      },
-      summary: {
-        type: Type.STRING,
-        description: "A detailed summary of the video transcript."
-       },
-      keyTakeaways: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.STRING,
-        },
-        description: "An array of key takeaways from the video."
-      },
-    },
-    // FIX: Replaced `required` with `propertyOrdering` to align with the provided Gemini API coding guidelines example for JSON responses.
-    propertyOrdering: ["title", "summary", "keyTakeaways"],
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (url && !isLoading) {
+      onSubmit(url);
+    }
   };
 
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: transcript,
-      config: {
-        systemInstruction: systemInstruction,
-        responseMimeType: "application/json",
-        responseSchema: responseSchema,
-      },
-    });
+  // Inline styles for simplicity
+  const formStyle: React.CSSProperties = {
+    display: 'flex',
+    gap: '0.5rem',
+    alignItems: 'center',
+    marginBottom: '1rem',
+  };
+  const inputContainerStyle: React.CSSProperties = {
+    position: 'relative',
+    flexGrow: 1,
+  };
+  const iconStyle: React.CSSProperties = {
+    position: 'absolute',
+    left: '0.75rem',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    color: '#9CA3AF',
+    width: '24px',
+    height: '24px',
+  };
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '0.75rem 0.75rem 0.75rem 3rem',
+    borderRadius: '0.375rem',
+    border: '1px solid #D1D5DB',
+    fontSize: '1rem',
+    boxSizing: 'border-box',
+  };
+  const buttonStyle: React.CSSProperties = {
+    padding: '0.75rem 1.5rem',
+    backgroundColor: isLoading ? '#9CA3AF' : '#3B82F6',
+    color: 'white',
+    border: 'none',
+    borderRadius: '0.375rem',
+    cursor: isLoading ? 'not-allowed' : 'pointer',
+    fontWeight: 'bold',
+  };
 
-    // FIX: Simplified JSON parsing. With responseMimeType set to "application/json",
-    // the Gemini API should return a clean JSON string, making markdown stripping unnecessary.
-    const jsonText = response.text.trim();
-    const analysisResult: Analysis = JSON.parse(jsonText);
-    return analysisResult;
-
-  } catch (error) {
-    console.error("Error analyzing transcript with Gemini:", error);
-    if (error instanceof Error) {
-        throw new Error(`Gemini API request failed: ${error.message}`);
-    }
-    throw new Error("An unknown error occurred during video analysis.");
-  }
+  return (
+    <form onSubmit={handleSubmit} style={formStyle}>
+      <div style={inputContainerStyle}>
+        <div style={iconStyle}>
+          <YouTubeIcon />
+        </div>
+        <input
+          type="text"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="Enter YouTube URL..."
+          style={inputStyle}
+          disabled={isLoading}
+        />
+      </div>
+      <button type="submit" style={buttonStyle} disabled={isLoading}>
+        {isLoading ? 'Analyzing...' : 'Analyze'}
+      </button>
+    </form>
+  );
 };
+
+export default UrlInputForm;
