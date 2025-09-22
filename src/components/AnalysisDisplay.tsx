@@ -1,55 +1,72 @@
 import React from 'react';
-import { AnalysisResult } from '../types';
+import { Analysis } from '../types';
 import CopyButton from './CopyButton';
 
 interface AnalysisDisplayProps {
-  analysis: AnalysisResult;
+  analysis: Analysis;
 }
 
 const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
-  const formatForCopy = () => {
-    let text = `Summary:\n${analysis.summary}\n\n`;
-    text += `Key Points:\n`;
-    analysis.keyPoints.forEach(point => {
-      text += `- ${point}\n`;
-    });
-    text += `\nSentiment: ${analysis.sentiment}`;
-    return text;
+
+  const containerStyle: React.CSSProperties = {
+    border: '1px solid #e2e8f0',
+    borderRadius: '8px',
+    padding: '1.5rem',
+    marginTop: '1.5rem',
+    backgroundColor: '#f9fafb',
   };
-  
-  const sentimentColor = {
-    Positive: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-    Negative: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-    Neutral: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+  const headerStyle: React.CSSProperties = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '1rem',
   };
+  const titleStyle: React.CSSProperties = {
+    fontSize: '1.5rem',
+    fontWeight: 'bold',
+    margin: 0,
+  };
+  const sectionTitleStyle: React.CSSProperties = {
+    fontSize: '1.25rem',
+    fontWeight: '600',
+    marginTop: '1.5rem',
+    marginBottom: '0.5rem',
+    borderBottom: '1px solid #e2e8f0',
+    paddingBottom: '0.25rem',
+  };
+  const summaryStyle: React.CSSProperties = {
+    lineHeight: 1.6,
+  };
+  const listStyle: React.CSSProperties = {
+    paddingLeft: '1.5rem',
+  };
+
+  const fullTextToCopy = `
+Title: ${analysis.title}
+
+Summary:
+${analysis.summary}
+
+Key Takeaways:
+${analysis.keyTakeaways.map(item => `- ${item}`).join('\n')}
+  `.trim();
 
   return (
-    <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 space-y-6 w-full animate-fade-in">
-      <div className="flex justify-between items-start">
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Analysis Result</h2>
-        <CopyButton textToCopy={formatForCopy()} />
+    <div style={containerStyle}>
+      <div style={headerStyle}>
+        <h2 style={titleStyle}>{analysis.title}</h2>
+        <CopyButton textToCopy={fullTextToCopy} />
       </div>
 
-      <div>
-        <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Summary</h3>
-        <p className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{analysis.summary}</p>
-      </div>
+      <h3 style={sectionTitleStyle}>Summary</h3>
+      <p style={summaryStyle}>{analysis.summary}</p>
 
-      <div>
-        <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Key Points</h3>
-        <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
-          {analysis.keyPoints.map((point, index) => (
-            <li key={index}>{point}</li>
-          ))}
-        </ul>
-      </div>
-
-       <div>
-        <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Sentiment</h3>
-        <span className={`px-3 py-1 text-sm font-medium rounded-full ${sentimentColor[analysis.sentiment]}`}>
-            {analysis.sentiment}
-        </span>
-      </div>
+      <h3 style={sectionTitleStyle}>Key Takeaways</h3>
+      <ul style={listStyle}>
+        {analysis.keyTakeaways.map((takeaway, index) => (
+          <li key={index}>{takeaway}</li>
+        ))}
+      </ul>
     </div>
   );
 };
