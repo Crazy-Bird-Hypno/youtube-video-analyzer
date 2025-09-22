@@ -1,66 +1,62 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { AnalysisResult, TranscriptEntry } from "../types";
+import { Analysis } from "../types";
 
-// FIX: Always use new GoogleGenAI({ apiKey: process.env.API_KEY });
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-const analysisSchema = {
-  type: Type.OBJECT,
-  properties: {
-    summary: {
-      type: Type.STRING,
-      description: "A concise summary of the video content, in 3-5 sentences.",
-    },
-    keyPoints: {
-      type: Type.ARRAY,
-      description: "A list of the 3 to 5 most important key points or takeaways from the video.",
-      items: {
+/**
+ * Analyzes a video transcript using the Gemini API.
+ * @param transcript The transcript of the video.
+ * @returns A promise that resolves to an Analysis object.
+ */
+export const analyzeVideoTranscript = async (transcript: string): Promise<Analysis> => {
+  // FIX: Use systemInstruction to separate the prompt from the data, which is a better practice.
+  const systemInstruction = `Analyze the video transcript provided. Provide a concise and engaging title for the video, a comprehensive summary of its content, and list the most important key takeaways as an array of strings. The output must be in JSON format matching the provided schema.`;
+
+  const responseSchema = {
+    type: Type.OBJECT,
+    properties: {
+      title: {
         type: Type.STRING,
+        description: "A concise and engaging title for the video."
+      },
+      summary: {
+        type: Type.STRING,
+        description: "A detailed summary of the video transcript."
+       },
+      keyTakeaways: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.STRING,
+        },
+        description: "An array of key takeaways from the video."
       },
     },
-    sentiment: {
-        type: Type.STRING,
-        description: "The overall sentiment of the video content. Can be 'Positive', 'Negative', or 'Neutral'.",
-        enum: ["Positive", "Negative", "Neutral"],
-    }
-  },
-  required: ["summary", "keyPoints", "sentiment"],
-};
-
-export const analyzeVideoTranscript = async (transcript: TranscriptEntry[]): Promise<AnalysisResult> => {
-  const transcriptText = transcript.map(t => t.text).join(' ');
-
-  const prompt = `Analyze the following YouTube video transcript and provide a summary, key points, and the overall sentiment.
-  
-  Transcript:
-  "${transcriptText}"
-  
-  Provide your analysis in the JSON format requested.`;
+    // FIX: Replaced `required` with `propertyOrdering` to align with the provided Gemini API coding guidelines example for JSON responses.
+    propertyOrdering: ["title", "summary", "keyTakeaways"],
+  };
 
   try {
-    // FIX: Use ai.models.generateContent to query GenAI.
     const response = await ai.models.generateContent({
-      // FIX: Use 'gemini-2.5-flash' for general text tasks.
       model: "gemini-2.5-flash",
-      contents: prompt,
+      contents: transcript,
       config: {
-        // FIX: Use responseMimeType and responseSchema for JSON output.
+        systemInstruction: systemInstruction,
         responseMimeType: "application/json",
-        responseSchema: analysisSchema,
+        responseSchema: responseSchema,
       },
     });
 
-    // FIX: Access the text property directly from the response.
-    const jsonText = response.text;
-    const result: AnalysisResult = JSON.parse(jsonText);
+    // FIX: Simplified JSON parsing. With responseMimeType set to "application/json",
+    // the Gemini API should return a clean JSON string, making markdown stripping unnecessary.
+    const jsonText = response.text.trim();
+    const analysisResult: Analysis = JSON.parse(jsonText);
+    return analysisResult;
 
-    if (!result.summary || !result.keyPoints || !result.sentiment) {
-        throw new Error("Invalid analysis format received from API.");
-    }
-    
-    return result;
   } catch (error) {
-    console.error("Error analyzing transcript with Gemini API:", error);
-    throw new Error("Failed to analyze video transcript. The AI model may be temporarily unavailable.");
+    console.error("Error analyzing transcript with Gemini:", error);
+    if (error instanceof Error) {
+        throw new Error(`Gemini API request failed: ${error.message}`);
+    }
+    throw new Error("An unknown error occurred during video analysis.");
   }
 };
