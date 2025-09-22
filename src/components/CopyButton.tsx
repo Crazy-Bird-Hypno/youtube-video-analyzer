@@ -7,31 +7,27 @@ interface CopyButtonProps {
 }
 
 const CopyButton: React.FC<CopyButtonProps> = ({ textToCopy }) => {
-  const [isCopied, setIsCopied] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  const handleCopy = async () => {
-    if (isCopied) return;
-    try {
-      await navigator.clipboard.writeText(textToCopy);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy text: ', err);
-      alert('Failed to copy text.');
-    }
+  const handleCopy = () => {
+    navigator.clipboard.writeText(textToCopy);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+  };
+
+  const buttonStyle: React.CSSProperties = {
+    background: 'none',
+    border: '1px solid #ccc',
+    borderRadius: '4px',
+    padding: '0.5rem',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
   };
 
   return (
-    <button
-      onClick={handleCopy}
-      className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-gray-50 dark:focus:ring-offset-gray-800"
-      aria-label={isCopied ? 'Copied to clipboard' : 'Copy to clipboard'}
-    >
-      {isCopied ? (
-        <CheckIcon className="w-5 h-5 text-green-500" />
-      ) : (
-        <ClipboardIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-      )}
+    <button onClick={handleCopy} style={buttonStyle} title="Copy to clipboard">
+      {copied ? <CheckIcon /> : <ClipboardIcon />}
     </button>
   );
 };
