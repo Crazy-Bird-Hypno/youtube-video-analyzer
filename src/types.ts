@@ -1,11 +1,11 @@
-export interface AnalysisResult {
+export interface Analysis {
+  title: string;
   summary: string;
-  keyPoints: string[];
-  sentiment: 'Positive' | 'Negative' | 'Neutral';
+  keyTakeaways: string[];
 }
 
-export interface TranscriptEntry {
-  text: string;
-  start: number;
-  duration: number;
+export interface VideoDetails {
+  id: string;
+  title: string;
+  transcript: string;
 }
